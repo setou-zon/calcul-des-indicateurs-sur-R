@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutoriel : Analyse Épidémiologique de la Méningite avec R et Tidyverse</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #1f4e79 0%, #2d5016 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        .explanation-box {
+            background: #e8f4f8;
+            border-left: 4px solid #1f4e79;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .result-box {
+            background: #f0f8f0;
+            border-left: 4px solid #2d5016;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .step-number {
+            background: #1f4e79;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .table-responsive {
+            margin: 1rem 0;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #1f4e79;
+        }
+        .toc {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .footer {
+            background: #1f4e79;
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1><i class="fas fa-chart-line me-3"></i>Tutoriel : Analyse Épidémiologique avec R</h1>
+                    <h2>Calcul des Indicateurs de la Méningite - Burkina Faso 2025</h2>
+                    <p class="lead">Guide complet utilisant R et tidyverse selon les recommandations du Epi R Handbook</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Table des matières -->
+        <div class="toc">
+            <h3><i class="fas fa-list me-2"></i>Table des Matières</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-unstyled">
+                        <li><a href="#introduction">1. Introduction et Objectifs</a></li>
+                        <li><a href="#donnees">2. Description des Données</a></li>
+                        <li><a href="#preparation">3. Préparation de l'Environnement R</a></li>
+                        <li><a href="#importation">4. Importation et Nettoyage</a></li>
+                        <li><a href="#indicateurs">5. Calcul des Indicateurs</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled">
+                        <li><a href="#resultats">6. Résultats et Interprétation</a></li>
+                        <li><a href="#visualisation">7. Visualisation des Données</a></li>
+                        <li><a href="#conclusions">8. Conclusions</a></li>
+                        <li><a href="#exercices">9. Exercices Pratiques</a></li>
+                        <li><a href="#ressources">10. Ressources Complémentaires</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Introduction -->
+        <section id="introduction" class="mb-5">
+            <h2><span class="step-number">1</span>Introduction et Objectifs</h2>
+            
+            <div class="explanation-box">
+                <h4><i class="fas fa-bullseye me-2"></i>Objectifs d'apprentissage</h4>
+                <p>À la fin de ce tutoriel, vous serez capable de :</p>
+                <ul>
+                    <li>Importer et nettoyer des données épidémiologiques avec R</li>
+                    <li>Calculer les indicateurs épidémiologiques standards</li>
+                    <li>Utiliser les packages tidyverse pour l'analyse de données</li>
+                    <li>Interpréter les résultats d'une analyse épidémiologique</li>
+                </ul>
+            </div>
+
+            <h4>Contexte de l'étude</h4>
+            <p>Nous analysons <strong>1 157 cas de méningite</strong> rapportés au Burkina Faso entre les semaines épidémiologiques 1 et 27 de 2025. Cette analyse utilise les variables clés :</p>
+            <ul>
+                <li><code>semaine_epi</code> : Semaine épidémiologique de notification</li>
+                <li><code>resultat_final_national</code> : Résultat final après examen laboratoire</li>
+            </ul>
+        </section>
+
+        <!-- Section 2: Description des données -->
+        <section id="donnees" class="mb-5">
+            <h2><span class="step-number">2</span>Description des Données</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Source des données</h4>
+                    <ul>
+                        <li><strong>Fichier :</strong> Base_Méningite_BF_corrige.xlsx</li>
+                        <li><strong>Pays :</strong> Burkina Faso</li>
+                        <li><strong>Période :</strong> Semaines 1-27 de 2025</li>
+                        <li><strong>Cas totaux :</strong> 1 157</li>
+                        <li><strong>Régions :</strong> 13</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Variables principales</h4>
+                    <ul>
+                        <li><code>region</code> : Région administrative</li>
+                        <li><code>age_en_annees</code> : Âge du patient</li>
+                        <li><code>sexe</code> : Sexe (M/F)</li>
+                        <li><code>evolution_du_cas</code> : Évolution (vivant/décédé)</li>
+                        <li><code>classification_finale</code> : Type de cas</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Préparation -->
+        <section id="preparation" class="mb-5">
+            <h2><span class="step-number">3</span>Préparation de l'Environnement R</h2>
+            
+            <div class="explanation-box">
+                <h4><i class="fas fa-info-circle me-2"></i>Pourquoi tidyverse ?</h4>
+                <p>Le <strong>tidyverse</strong> est une collection de packages R conçus pour la science des données. Il offre une syntaxe cohérente et intuitive pour manipuler, analyser et visualiser les données.</p>
+            </div>
+
+            <h4>Installation des packages</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Installation des packages (à faire une seule fois)
+install.packages("tidyverse")
+install.packages("readxl")
+install.packages("knitr")
+install.packages("DT")</code></pre>
+            </div>
+
+            <h4>Chargement des librairies</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Chargement des packages nécessaires
+library(readxl)      # Pour lire les fichiers Excel
+library(dplyr)       # Pour la manipulation de données
+library(tidyr)       # Pour le nettoyage des données
+library(ggplot2)     # Pour les visualisations
+library(knitr)       # Pour les tableaux formatés</code></pre>
+            </div>
+
+            <div class="warning-box">
+                <h5><i class="fas fa-exclamation-triangle me-2"></i>Référence méthodologique</h5>
+                <p>Cette analyse suit les recommandations du <strong>Epi R Handbook</strong> :</p>
+                <p><a href="https://epirhandbook.com/en/new_pages/transition_to_R.html" target="_blank">https://epirhandbook.com/en/new_pages/transition_to_R.html</a></p>
+            </div>
+        </section>
+
+        <!-- Section 4: Importation -->
+        <section id="importation" class="mb-5">
+            <h2><span class="step-number">4</span>Importation et Nettoyage des Données</h2>
+            
+            <h4>Étape 4.1 : Importation du fichier Excel</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Lire le fichier Excel
+burkina_meningite <- read_excel("Base_Méningite_BF_corrige.xlsx")
+
+# Afficher les dimensions de la base
+cat("ANALYSE DE LA BASE DE DONNÉES MÉNINGITE BURKINA FASO\n")
+cat("====================================================\n")
+cat("Nombre total de cas:", nrow(burkina_meningite), "\n")
+cat("Nombre de variables:", ncol(burkina_meningite), "\n\n")</code></pre>
+            </div>
+
+            <div class="explanation-box">
+                <h5><i class="fas fa-lightbulb me-2"></i>Explication</h5>
+                <p><code>read_excel()</code> importe les données Excel dans R. Les fonctions <code>nrow()</code> et <code>ncol()</code> donnent respectivement le nombre de lignes (cas) et de colonnes (variables).</p>
+            </div>
+
+            <h4>Étape 4.2 : Sélection et nettoyage des variables</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Sélectionner et nettoyer les variables importantes
+donnees_nettoyees <- burkina_meningite %>%
+  select(
+    region,
+    district,
+    semaine_epi,                    # Variable clé demandée
+    age_en_annees,
+    sexe,
+    evolution_du_cas,               # Évolution du patient
+    resultat_final_national,        # Variable clé demandée
+    classification_finale           # Classification du cas
+  ) %>%
+  mutate(
+    # Standardiser l'évolution du cas
+    evolution_clean = case_when(
+      str_to_lower(evolution_du_cas) %in% c("decede", "décédé") ~ "Décédé",
+      str_to_lower(evolution_du_cas) %in% c("vivant", "gueri", "guéri") ~ "Vivant",
+      str_to_lower(evolution_du_cas) == "traitement" ~ "En traitement",
+      TRUE ~ "Statut inconnu"
+    ),
+    
+    # Standardiser la classification
+    statut_cas = case_when(
+      classification_finale == "Cas confirmé" ~ "Confirmé",
+      classification_finale == "Cas probable" ~ "Probable",
+      classification_finale == "Cas suspects" ~ "Suspect",
+      TRUE ~ "Non classé"
+    ),
+    
+    # Créer des groupes d'âge selon les recommandations OMS
+    groupe_age = case_when(
+      age_en_annees < 1 ~ "< 1 an",
+      age_en_annees >= 1 & age_en_annees < 5 ~ "1-4 ans",
+      age_en_annees >= 5 & age_en_annees < 15 ~ "5-14 ans",
+      age_en_annees >= 15 & age_en_annees < 30 ~ "15-29 ans",
+      age_en_annees >= 30 ~ "30+ ans",
+      TRUE ~ "Âge inconnu"
+    )
+  )</code></pre>
+            </div>
+
+            <div class="explanation-box">
+                <h5><i class="fas fa-cogs me-2"></i>Fonctions tidyverse utilisées</h5>
+                <ul>
+                    <li><code>select()</code> : Sélectionne les colonnes d'intérêt</li>
+                    <li><code>mutate()</code> : Crée ou modifie des variables</li>
+                    <li><code>case_when()</code> : Équivalent de plusieurs conditions if-else</li>
+                    <li><code>%>%</code> : Opérateur pipe pour enchaîner les opérations</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 5: Calcul des indicateurs -->
+        <section id="indicateurs" class="mb-5">
+            <h2><span class="step-number">5</span>Calcul des Indicateurs Épidémiologiques</h2>
+            
+            <h4>Étape 5.1 : Indicateurs par région</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Calcul des indicateurs par région
+indicateurs_region <- donnees_nettoyees %>%
+  group_by(region) %>%
+  summarise(
+    # Nombre de cas
+    total_cas = n(),
+    cas_confirmes = sum(statut_cas == "Confirmé", na.rm = TRUE),
+    cas_probables = sum(statut_cas == "Probable", na.rm = TRUE),
+    cas_suspects = sum(statut_cas == "Suspect", na.rm = TRUE),
+    
+    # Évolution des cas
+    deces = sum(evolution_clean == "Décédé", na.rm = TRUE),
+    vivants = sum(evolution_clean == "Vivant", na.rm = TRUE),
+    
+    # Calcul du Taux de Létalité (Case Fatality Rate - CFR)
+    # Formule: (Nombre de décès / Nombre total de cas) × 100
+    taux_letalite_pct = round((deces / total_cas) * 100, 2),
+    
+    # Proportion de cas confirmés
+    prop_confirmes_pct = round((cas_confirmes / total_cas) * 100, 2),
+    
+    # Statistiques démographiques
+    age_median = round(median(age_en_annees, na.rm = TRUE), 1),
+    prop_masculin_pct = round((sum(sexe == "M", na.rm = TRUE) / n()) * 100, 1),
+    
+    .groups = 'drop'
+  ) %>%
+  # Trier par nombre de cas décroissant
+  arrange(desc(total_cas))</code></pre>
+            </div>
+
+            <div class="explanation-box">
+                <h5><i class="fas fa-calculator me-2"></i>Indicateurs calculés</h5>
+                <ul>
+                    <li><strong>Taux de létalité :</strong> (Décès / Total cas) × 100</li>
+                    <li><strong>Proportion de cas confirmés :</strong> (Cas confirmés / Total cas) × 100</li>
+                    <li><strong>Âge médian :</strong> Âge au milieu de la distribution</li>
+                    <li><strong>Proportion masculine :</strong> Pourcentage d'hommes</li>
+                </ul>
+            </div>
+
+            <h4>Étape 5.2 : Analyse temporelle par semaine épidémiologique</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Évolution temporelle des cas
+evolution_temporelle <- donnees_nettoyees %>%
+  group_by(semaine_epi) %>%
+  summarise(
+    nouveaux_cas = n(),
+    nouveaux_deces = sum(evolution_clean == "Décédé", na.rm = TRUE),
+    cas_confirmes = sum(statut_cas == "Confirmé", na.rm = TRUE),
+    
+    # Taux de létalité hebdomadaire
+    taux_letalite_hebdo = if_else(nouveaux_cas > 0, 
+                                  round((nouveaux_deces / nouveaux_cas) * 100, 2), 
+                                  0),
+    .groups = 'drop'
+  ) %>%
+  # Calculer les cas cumulés
+  mutate(
+    cas_cumules = cumsum(nouveaux_cas),
+    deces_cumules = cumsum(nouveaux_deces)
+  ) %>%
+  arrange(semaine_epi)</code></pre>
+            </div>
+
+            <h4>Étape 5.3 : Indicateurs nationaux</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Calcul des indicateurs nationaux
+indicateurs_nationaux <- donnees_nettoyees %>%
+  summarise(
+    # Effectifs
+    total_cas_national = n(),
+    cas_confirmes_national = sum(statut_cas == "Confirmé", na.rm = TRUE),
+    cas_probables_national = sum(statut_cas == "Probable", na.rm = TRUE),
+    cas_suspects_national = sum(statut_cas == "Suspect", na.rm = TRUE),
+    deces_national = sum(evolution_clean == "Décédé", na.rm = TRUE),
+    
+    # Indicateurs clés
+    taux_letalite_national = round((deces_national / total_cas_national) * 100, 2),
+    prop_confirmes_national = round((cas_confirmes_national / total_cas_national) * 100, 2),
+    
+    # Démographie
+    age_median_national = round(median(age_en_annees, na.rm = TRUE), 1),
+    prop_masculin_national = round((sum(sexe == "M", na.rm = TRUE) / n()) * 100, 1)
+  )</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 6: Résultats -->
+        <section id="resultats" class="mb-5">
+            <h2><span class="step-number">6</span>Résultats et Interprétation</h2>
+            
+            <h4>Indicateurs nationaux</h4>
+            <div class="result-box">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-primary">1 157</h3>
+                        <p>Total des cas</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-danger">26</h3>
+                        <p>Décès</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-warning">2,25%</h3>
+                        <p>Taux de létalité</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-success">7,0</h3>
+                        <p>Âge médian (ans)</p>
+                    </div>
+                </div>
+            </div>
+
+            <h4>Tableau des résultats par région</h4>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Région</th>
+                            <th>Total cas</th>
+                            <th>Cas confirmés</th>
+                            <th>Décès</th>
+                            <th>Taux de létalité (%)</th>
+                            <th>% Cas confirmés</th>
+                            <th>Âge médian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Hauts-Bassins</strong></td>
+                            <td>220</td>
+                            <td>0</td>
+                            <td>10</td>
+                            <td><span class="highlight">4,55</span></td>
+                            <td>0,00</td>
+                            <td>10,0</td>
+                        </tr>
+                        <tr>
+                            <td>Sud-Ouest</td>
+                            <td>149</td>
+                            <td>0</td>
+                            <td>4</td>
+                            <td>2,68</td>
+                            <td>0,00</td>
+                            <td>9,0</td>
+                        </tr>
+                        <tr>
+                            <td>Centre</td>
+                            <td>124</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0,00</td>
+                            <td>0,00</td>
+                            <td>6,0</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Centre-Sud</strong></td>
+                            <td>18</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td><span class="highlight">5,56</span></td>
+                            <td><span class="highlight">11,11</span></td>
+                            <td>5,5</td>
+                        </tr>
+                        <tr class="table-info">
+                            <td><strong>BURKINA FASO (TOTAL)</strong></td>
+                            <td><strong>1 157</strong></td>
+                            <td><strong>4</strong></td>
+                            <td><strong>26</strong></td>
+                            <td><strong>2,25</strong></td>
+                            <td><strong>0,35</strong></td>
+                            <td><strong>7,0</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="explanation-box">
+                <h5><i class="fas fa-search me-2"></i>Interprétation des résultats</h5>
+                <ul>
+                    <li><strong>Région la plus touchée :</strong> Hauts-Bassins (220 cas, 19% du total national)</li>
+                    <li><strong>Taux de létalité le plus élevé :</strong> Centre-Sud (5,56%)</li>
+                    <li><strong>Faible taux de confirmation :</strong> Seulement 0,35% des cas confirmés en laboratoire</li>
+                    <li><strong>Population jeune touchée :</strong> Âge médian de 7 ans</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 7: Visualisation -->
+        <section id="visualisation" class="mb-5">
+            <h2><span class="step-number">7</span>Visualisation des Données</h2>
+            
+            <h4>Code pour créer des graphiques avec ggplot2</h4>
+            <div class="code-block">
+                <pre><code class="language-r"># Graphique de la répartition des cas par région
+ggplot(indicateurs_region, aes(x = reorder(region, total_cas), y = total_cas)) +
+  geom_col(fill = "#1f4e79", alpha = 0.8) +
+  coord_flip() +
+  labs(
+    title = "Répartition des cas de méningite par région",
+    subtitle = "Burkina Faso, Semaines 1-27 de 2025",
+    x = "Région",
+    y = "Nombre de cas",
+    caption = "Source: Base_Méningite_BF_corrige.xlsx"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+# Graphique de l'évolution temporelle
+ggplot(evolution_temporelle, aes(x = semaine_epi)) +
+  geom_col(aes(y = nouveaux_cas), fill = "#1f4e79", alpha = 0.7) +
+  geom_line(aes(y = taux_letalite_hebdo * 10, group = 1), 
+            color = "#c5504b", size = 1.2) +
+  scale_y_continuous(
+    name = "Nombre de nouveaux cas",
+    sec.axis = sec_axis(~ . / 10, name = "Taux de létalité (%)")
+  ) +
+  labs(
+    title = "Évolution temporelle de la méningite",
+    subtitle = "Nouveaux cas et taux de létalité par semaine épidémiologique",
+    x = "Semaine épidémiologique"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )</code></pre>
+            </div>
+        </section>
+
+        <!-- Section 8: Conclusions -->
+        <section id="conclusions" class="mb-5">
+            <h2><span class="step-number">8</span>Conclusions</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Principales observations</h4>
+                    <ul>
+                        <li>Taux de létalité national modéré (2,25%)</li>
+                        <li>Disparités régionales importantes</li>
+                        <li>Pic épidémique en semaine 9 (10,53% de létalité)</li>
+                        <li>Population jeune principalement touchée</li>
+                        <li>Très faible taux de confirmation laboratoire</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Recommandations</h4>
+                    <ul>
+                        <li>Renforcer le diagnostic laboratoire</li>
+                        <li>Surveillance renforcée dans les Hauts-Bassins</li>
+                        <li>Prévention ciblée pour les enfants</li>
+                        <li>Améliorer la prise en charge dans le Centre-Sud</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 9: Exercices -->
+        <section id="exercices" class="mb-5">
+            <h2><span class="step-number">9</span>Exercices Pratiques</h2>
+            
+            <div class="warning-box">
+                <h4><i class="fas fa-tasks me-2"></i>Exercices pour les étudiants</h4>
+                
+                <h5>Exercice 1 : Analyse par groupe d'âge</h5>
+                <p>Calculez les indicateurs épidémiologiques par groupe d'âge. Quel groupe d'âge a le taux de létalité le plus élevé ?</p>
+                
+                <h5>Exercice 2 : Analyse temporelle avancée</h5>
+                <p>Identifiez les 3 semaines avec le plus grand nombre de cas. Y a-t-il une corrélation entre le nombre de cas et le taux de létalité ?</p>
+                
+                <h5>Exercice 3 : Comparaison par sexe</h5>
+                <p>Comparez les taux de létalité entre hommes et femmes. Y a-t-il une différence significative ?</p>
+                
+                <h5>Exercice 4 : Visualisation personnalisée</h5>
+                <p>Créez un graphique montrant l'évolution du taux de létalité par semaine avec une ligne de tendance.</p>
+            </div>
+        </section>
+
+        <!-- Section 10: Ressources -->
+        <section id="ressources" class="mb-5">
+            <h2><span class="step-number">10</span>Ressources Complémentaires</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Documentation R</h4>
+                    <ul>
+                        <li><a href="https://www.tidyverse.org/" target="_blank">Site officiel tidyverse</a></li>
+                        <li><a href="https://dplyr.tidyverse.org/" target="_blank">Documentation dplyr</a></li>
+                        <li><a href="https://ggplot2.tidyverse.org/" target="_blank">Documentation ggplot2</a></li>
+                        <li><a href="https://r4ds.had.co.nz/" target="_blank">R for Data Science (livre gratuit)</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Épidémiologie avec R</h4>
+                    <ul>
+                        <li><a href="https://epirhandbook.com/" target="_blank">Epi R Handbook</a></li>
+                        <li><a href="https://www.repidemicsconsortium.org/" target="_blank">R Epidemics Consortium</a></li>
+                        <li><a href="https://cran.r-project.org/web/views/Epidemiology.html" target="_blank">CRAN Task View: Epidemiology</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code complet -->
+        <section class="mb-5">
+            <h2><i class="fas fa-file-code me-2"></i>Code R Complet</h2>
+            <div class="code-block">
+                <pre><code class="language-r"># ===============================================================================
+# ANALYSE ÉPIDÉMIOLOGIQUE DE LA MÉNINGITE - BURKINA FASO 2025
+# Code R utilisant tidyverse selon les recommandations du Epi R Handbook
+# ===============================================================================
+
+# 1. CHARGEMENT DES PACKAGES
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+# 2. IMPORTATION DES DONNÉES
+burkina_meningite <- read_excel("Base_Méningite_BF_corrige.xlsx")
+
+# 3. NETTOYAGE ET PRÉPARATION
+donnees_nettoyees <- burkina_meningite %>%
+  select(region, district, semaine_epi, age_en_annees, sexe, 
+         evolution_du_cas, resultat_final_national, classification_finale) %>%
+  mutate(
+    evolution_clean = case_when(
+      str_to_lower(evolution_du_cas) %in% c("decede", "décédé") ~ "Décédé",
+      str_to_lower(evolution_du_cas) %in% c("vivant", "gueri", "guéri") ~ "Vivant",
+      str_to_lower(evolution_du_cas) == "traitement" ~ "En traitement",
+      TRUE ~ "Statut inconnu"
+    ),
+    statut_cas = case_when(
+      classification_finale == "Cas confirmé" ~ "Confirmé",
+      classification_finale == "Cas probable" ~ "Probable",
+      classification_finale == "Cas suspects" ~ "Suspect",
+      TRUE ~ "Non classé"
+    )
+  )
+
+# 4. CALCUL DES INDICATEURS PAR RÉGION
+indicateurs_region <- donnees_nettoyees %>%
+  group_by(region) %>%
+  summarise(
+    total_cas = n(),
+    cas_confirmes = sum(statut_cas == "Confirmé", na.rm = TRUE),
+    deces = sum(evolution_clean == "Décédé", na.rm = TRUE),
+    taux_letalite_pct = round((deces / total_cas) * 100, 2),
+    prop_confirmes_pct = round((cas_confirmes / total_cas) * 100, 2),
+    age_median = round(median(age_en_annees, na.rm = TRUE), 1),
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(total_cas))
+
+# 5. ANALYSE TEMPORELLE
+evolution_temporelle <- donnees_nettoyees %>%
+  group_by(semaine_epi) %>%
+  summarise(
+    nouveaux_cas = n(),
+    nouveaux_deces = sum(evolution_clean == "Décédé", na.rm = TRUE),
+    taux_letalite_hebdo = if_else(nouveaux_cas > 0, 
+                                  round((nouveaux_deces / nouveaux_cas) * 100, 2), 0),
+    .groups = 'drop'
+  ) %>%
+  arrange(semaine_epi)
+
+# 6. AFFICHAGE DES RÉSULTATS
+print("INDICATEURS PAR RÉGION:")
+print(indicateurs_region)
+
+print("ÉVOLUTION TEMPORELLE:")
+print(head(evolution_temporelle, 10))
+
+# 7. SAUVEGARDE
+write.csv(indicateurs_region, "indicateurs_region_BF.csv", row.names = FALSE)
+write.csv(evolution_temporelle, "evolution_temporelle_BF.csv", row.names = FALSE)</code></pre>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>À propos de ce tutoriel</h5>
+                    <p>Ce tutoriel a été créé pour enseigner l'analyse épidémiologique avec R et tidyverse, en utilisant des données réelles de surveillance de la méningite au Burkina Faso.</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Contact</h5>
+                    <p>Pour toute question sur ce tutoriel, contactez votre enseignant ou consultez les ressources complémentaires listées ci-dessus.</p>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p>&copy; 2025 - Tutoriel d'Analyse Épidémiologique avec R</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>
+
